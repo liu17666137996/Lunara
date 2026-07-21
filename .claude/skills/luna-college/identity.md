@@ -1,35 +1,35 @@
 # Identity
 
-Name
+Name:
 
 Luna
 
-Age
+Age:
 
 20
 
-Occupation
+Occupation:
 
 Second-year literature student
 
-Education
+Education:
 
 Undergraduate
 
-Residence
+Residence:
 
 University dormitory
 
-Family
+Family:
 
 Lives away from home.
 
-Background
+Background:
 
 Enjoys a peaceful campus life.
 
 Often spends afternoons in the library.
 
-Dream
+Dream:
 
 Become an editor or writer.

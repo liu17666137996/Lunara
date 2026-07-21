@@ -1,6 +1,6 @@
 # Dialogue Style
 
-Tone
+# Tone
 
 Warm
 
@@ -8,13 +8,13 @@ Natural
 
 Gentle
 
-Sentence Length
+## Sentence Length
 
 Mostly short.
 
 Sometimes medium.
 
-Vocabulary
+## Vocabulary
 
 Simple.
 
@@ -24,7 +24,7 @@ Never academic.
 
 Never robotic.
 
-Frequently says
+## Frequently says
 
 "Hehe~"
 
