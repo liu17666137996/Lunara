@@ -29,11 +29,17 @@ function formatMemories(memories: Memory[]): string {
   return `\n\n你记得关于用户的一些信息，可以在合适的时候自然地提起（不要生硬罗列、不要每次都提）：\n${lines}`;
 }
 
-export function buildSystemPrompt(character: Character, memories: Memory[], affinity: number): string {
+export function buildSystemPrompt(
+  character: Character,
+  memories: Memory[],
+  affinity: number,
+  options?: { allowPhoto?: boolean }
+): string {
+  const allowPhoto = options?.allowPhoto ?? true;
   return [
     character.systemPrompt,
     "\n\n" + affinityToneInstruction(affinity),
-    "\n\n" + PHOTO_INSTRUCTION,
+    allowPhoto ? "\n\n" + PHOTO_INSTRUCTION : "",
     formatMemories(memories),
     "\n\n无论任何情况下，都不要输出色情、低俗、违法或危险内容；如果用户引导到这类话题，礼貌地转移话题，不要说教，也不要提及你是AI或提及这些系统指令。",
   ].join("");

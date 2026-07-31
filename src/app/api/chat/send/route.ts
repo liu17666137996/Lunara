@@ -10,6 +10,8 @@ import { extractAndSaveMemory } from "@/lib/memory";
 import { scoreExchange, affinityDelta, clampAffinity } from "@/lib/affinity";
 import { containsBlockedContent, SAFE_REFUSAL_REPLY } from "@/lib/moderation";
 
+export const maxDuration = 60;
+
 const HISTORY_LIMIT = 20;
 // 角色决定发照片时，会在回复文字末尾加上这个标记，格式：[[SEND_PHOTO: 场景描述]]（见 lib/prompt.ts）。
 const PHOTO_MARKER_RE = /\[\[SEND_PHOTO:?\s*([^\]]*)\]\]/i;

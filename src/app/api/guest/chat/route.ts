@@ -3,8 +3,14 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { buildSystemPrompt } from "@/lib/prompt";
 import { chatComplete, type ChatMessage } from "@/lib/llm";
+import { generateCharacterPhoto } from "@/lib/imagegen";
 import { scoreExchange, affinityDelta, clampAffinity } from "@/lib/affinity";
 import { containsBlockedContent, SAFE_REFUSAL_REPLY } from "@/lib/moderation";
+
+export const maxDuration = 60;
+
+// 角色决定发照片时，会在回复文字末尾加上这个标记，格式：[[SEND_PHOTO: 场景描述]]（见 lib/prompt.ts）。
+const PHOTO_MARKER_RE = /\[\[SEND_PHOTO:?\s*([^\]]*)\]\]/i;
 
 const bodySchema = z.object({
   characterKey: z.string().min(1),
@@ -42,16 +48,31 @@ export async function POST(req: Request) {
     { role: "user", content: message },
   ];
 
-  let reply: string;
+  let rawReply: string;
   try {
-    reply = await chatComplete(contextMessages);
+    rawReply = await chatComplete(contextMessages);
   } catch (err) {
     console.error("guest chatComplete failed", err);
     return NextResponse.json({ error: "llm_unavailable" }, { status: 502 });
   }
 
+  const photoMatch = rawReply.match(PHOTO_MARKER_RE);
+  const reply = rawReply.replace(PHOTO_MARKER_RE, "").trim() || (photoMatch ? "给你看～" : "");
+
+  let imageUrl: string | undefined;
+  if (photoMatch) {
+    try {
+      const contextSummary = [...history.slice(-6), { role: "user" as const, content: message }]
+        .map((h) => `${h.role === "user" ? "用户" : character.name}: ${h.content}`)
+        .join("\n");
+      imageUrl = await generateCharacterPhoto(character, contextSummary, photoMatch[1]?.trim());
+    } catch (err) {
+      console.error("guest auto photo generation failed", err);
+    }
+  }
+
   const score = await scoreExchange(character, message);
   const nextAffinity = clampAffinity(affinity + affinityDelta(score));
 
-  return NextResponse.json({ reply, affinity: nextAffinity });
+  return NextResponse.json({ reply, affinity: nextAffinity, imageUrl });
 }

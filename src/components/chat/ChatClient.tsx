@@ -196,7 +196,7 @@ export function ChatClient(props: Props) {
       setSendError("消息没有发送成功，请重试。");
       return;
     }
-    const data: { reply: string; affinity: number } = await res.json();
+    const data: { reply: string; affinity: number; imageUrl?: string } = await res.json();
 
     const assistantMsg: DisplayMessage = {
       id: `guest-${Date.now()}`,
@@ -207,9 +207,20 @@ export function ChatClient(props: Props) {
       audioUrl: null,
       createdAt: new Date().toISOString(),
     };
+    const assistantImageMsg: DisplayMessage | null = data.imageUrl
+      ? {
+          id: `guest-${Date.now()}-photo`,
+          role: "assistant",
+          type: "IMAGE",
+          content: null,
+          mediaUrl: data.imageUrl,
+          audioUrl: null,
+          createdAt: new Date().toISOString(),
+        }
+      : null;
 
     setMessages((prev) => {
-      const next = [...prev, assistantMsg];
+      const next = assistantImageMsg ? [...prev, assistantMsg, assistantImageMsg] : [...prev, assistantMsg];
       persistGuestHistory(next);
       return next;
     });

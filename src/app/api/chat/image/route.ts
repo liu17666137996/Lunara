@@ -5,6 +5,8 @@ import { requireUserId } from "@/lib/require-user";
 import { getAccessStatus } from "@/lib/billing";
 import { generateCharacterPhoto } from "@/lib/imagegen";
 
+export const maxDuration = 60;
+
 const bodySchema = z.object({ hint: z.string().max(300).optional() });
 
 /**
