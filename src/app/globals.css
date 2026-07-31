@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+:root {
+  /* 深夜烛光 — 私密、温暖、不喧闹的陪伴感，区别于典型的暖米色+衬线或粉紫渐变模板 */
+  --ink: #17121b;
+  --ink-2: #221a27;
+  --ink-3: #2c2131;
+  --paper: #f6efe7;
+  --paper-dim: #d9cfc4;
+  --mist: #9c8fa0;
+  --line: rgba(246, 239, 231, 0.09);
+  --ember: #e8a167;
+  --ember-2: #c9834e;
+  --rose: #d97b92;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-paper: var(--paper);
+  --color-paper-dim: var(--paper-dim);
+  --color-mist: var(--mist);
+  --color-line: var(--line);
+  --color-ember: var(--ember);
+  --color-ember-2: var(--ember-2);
+  --color-rose: var(--rose);
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-noto-sans-sc);
+}
+
+* {
+  border-color: var(--line);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@keyframes candle-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.04);
+  }
+}
+
+.candle-glow {
+  animation: candle-pulse 4.5s ease-in-out infinite;
+}
+
+::selection {
+  background: var(--ember);
+  color: var(--ink);
+}

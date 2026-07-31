@@ -1,0 +1,179 @@
+// Prisma schema for the AI 女友聊天 app.
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Auth.js (NextAuth) required models — Google OAuth only, no credentials login.
+// ---------------------------------------------------------------------------
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// App domain models
+// ---------------------------------------------------------------------------
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  googleId  String?  @unique // Google 返回的 sub，账号首次关联时回填，见 auth.ts 的 linkAccount 事件
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Monetization — 会员默认可试用 7 天，登录即会员，见 AI女友SPEC.md 第 8 点
+  trialStartedAt DateTime?
+  isPaid         Boolean   @default(false)
+  planExpiresAt  DateTime?
+
+  accounts      Account[]
+  sessions      Session[]
+  userCharacter UserCharacter?
+  messages      Message[]
+  memories      Memory[]
+  payments      Payment[]
+}
+
+model Character {
+  id           String   @id @default(cuid())
+  key          String   @unique // "ava" | "emma" | "luna" | "mia" | "olivia" | "sophia"
+  name         String
+  age          Int
+  occupation   String
+  tagline      String // 卡片上的一句话介绍
+  keywords     String[] // 卡片上的 3 个关键词
+  avatarUrl    String // 卡片头图
+  baseImageUrl String // 图片生成时作为形象参照的基础图
+  systemPrompt String @db.Text // system_prompt_template，聊天时的核心人设
+  voiceId      String // TTS speaker id
+  profile      Json // 完整角色 JSON（personality/memory_rules/boundaries 等），用于组装更细的 prompt
+  createdAt    DateTime @default(now())
+
+  userCharacters UserCharacter[]
+  messages       Message[]
+  memories       Memory[]
+}
+
+// 一个用户同一时间只能拥有一个虚拟女友 —— userId 唯一约束在数据库层面强制这条规则。
+model UserCharacter {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  characterId       String
+  affinity          Int      @default(50) // 对用户隐藏的好感度，0-100
+  relationshipStage Int      @default(1)
+  selectedAt        DateTime @default(now())
+  switchedFrom      String? // 上一个角色的 key，换女友时记录
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  character Character @relation(fields: [characterId], references: [id])
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  AUDIO
+}
+
+model Message {
+  id          String      @id @default(cuid())
+  userId      String
+  characterId String
+  role        MessageRole
+  type        MessageType
+  content     String?     @db.Text // 文本内容，或图片/语音消息的说明文字
+  mediaUrl    String? // 图片/语音消息本体（R2 URL）
+  audioUrl    String? // ASSISTANT 文本消息的伴生语音（异步生成后回填）
+  createdAt   DateTime    @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  character Character @relation(fields: [characterId], references: [id])
+
+  @@index([userId, characterId, createdAt])
+}
+
+// 女友的"记忆" —— 用户的关键个人信息，通过 LLM 判定后 upsert。
+model Memory {
+  id          String   @id @default(cuid())
+  userId      String
+  characterId String
+  key         String // e.g. "favorite_food" / "birthday" / "job"
+  value       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  character Character @relation(fields: [characterId], references: [id])
+
+  @@unique([userId, characterId, key])
+}
+
+enum PaymentType {
+  SUB_MONTH
+  SUB_HALF_YEAR
+  SUB_YEAR
+  CHARACTER_SWITCH
+}
+
+enum PaymentStatus {
+  SUCCEEDED
+  FAILED
+}
+
+// Mock 支付记录；后续接入真实支付渠道时只需替换 status 的写入来源。
+model Payment {
+  id          String        @id @default(cuid())
+  userId      String
+  type        PaymentType
+  amountCents Int
+  status      PaymentStatus @default(SUCCEEDED)
+  createdAt   DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

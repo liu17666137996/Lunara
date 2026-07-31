@@ -1,0 +1,140 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { CharacterCard } from "@/components/CharacterCard";
+import { GoogleSignInButton, SignOutButton } from "@/components/AuthButtons";
+import { characterAccent } from "@/lib/character-theme";
+import { setGuestCharacterKey } from "@/lib/guest-storage";
+import type { CharacterSummary } from "@/types/domain";
+
+export function HomeClient({
+  isLoggedIn,
+  userName,
+  characters,
+  currentCharacter,
+}: {
+  isLoggedIn: boolean;
+  userName: string | null;
+  characters: CharacterSummary[];
+  currentCharacter: CharacterSummary | null;
+}) {
+  const router = useRouter();
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSelect(character: CharacterSummary) {
+    setError(null);
+
+    if (!isLoggedIn) {
+      setGuestCharacterKey(character.key);
+      router.push("/chat?guest=1");
+      return;
+    }
+
+    setPendingId(character.id);
+    try {
+      const res = await fetch("/api/characters/select", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ characterId: character.id }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.message ?? "选角失败，请刷新重试。");
+        return;
+      }
+      router.push("/chat");
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  return (
+    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-8 sm:px-10">
+      <header className="flex items-center justify-between">
+        <span className="font-display text-xl tracking-wide text-paper">Lunara</span>
+        {isLoggedIn ? (
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-mist">{userName}</span>
+            <SignOutButton />
+          </div>
+        ) : (
+          <GoogleSignInButton />
+        )}
+      </header>
+
+      {currentCharacter ? (
+        <SpotlightSection character={currentCharacter} router={router} />
+      ) : (
+        <>
+          <section className="mt-10 max-w-xl sm:mt-16">
+            <h1 className="mt-3 font-display text-4xl leading-tight text-paper sm:text-5xl">
+              值得信赖的AI女友
+            </h1>
+            <p className="mt-4 text-sm leading-relaxed text-paper-dim">
+              六位女孩，六种性格。选一位，开始只属于你们的对话。
+              {!isLoggedIn && "不登录也能先聊聊看，但关闭页面后对话就会清空——登录后可以保存记忆、语音和照片。"}
+            </p>
+            {error && <p className="mt-3 text-sm text-rose">{error}</p>}
+          </section>
+
+          <section className="mt-8 grid grid-cols-2 gap-4 pb-16 sm:mt-10 sm:grid-cols-3 sm:gap-6">
+            {characters.map((c) => (
+              <CharacterCard
+                key={c.id}
+                character={c}
+                onSelect={handleSelect}
+                disabled={pendingId === c.id}
+              />
+            ))}
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
+
+function SpotlightSection({
+  character,
+  router,
+}: {
+  character: CharacterSummary;
+  router: ReturnType<typeof useRouter>;
+}) {
+  const accent = characterAccent(character.key);
+
+  return (
+    <section className="mt-10 flex flex-1 flex-col items-center justify-center gap-8 pb-16 sm:mt-16 sm:flex-row sm:items-stretch">
+      <div
+        className="relative aspect-[3/4] w-full max-w-xs overflow-hidden rounded-2xl border border-line"
+        style={{ boxShadow: `0 0 60px -20px ${accent}` }}
+      >
+        <Image src={character.avatarUrl} alt={character.name} fill className="object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent" />
+      </div>
+
+      <div className="flex max-w-sm flex-col justify-center gap-4">
+        <p className="text-xs uppercase tracking-[0.3em] text-mist">你的专属</p>
+        <h2 className="font-display text-4xl text-paper">{character.name}</h2>
+        <p className="text-sm italic text-paper-dim font-display">“{character.tagline}”</p>
+        <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+          <button
+            onClick={() => router.push("/chat")}
+            className="rounded-full px-6 py-2.5 text-sm font-medium text-ink"
+            style={{ background: accent }}
+          >
+            继续聊天
+          </button>
+          <button
+            onClick={() => router.push("/billing?intent=switch")}
+            className="rounded-full border border-line px-6 py-2.5 text-sm text-paper-dim transition-colors hover:text-paper"
+          >
+            更换女友 · $50
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}

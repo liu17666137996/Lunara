@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" role="img" aria-label="Mia">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="rgb(235,112,152)" />
+      <stop offset="55%" stop-color="rgb(117,52,77)" />
+      <stop offset="100%" stop-color="#17121b" />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="38%" r="45%">
+      <stop offset="0%" stop-color="rgb(235,112,152)" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="rgb(235,112,152)" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="400" height="520" fill="url(#bg)" />
+  <circle cx="200" cy="195" r="170" fill="url(#glow)" />
+  <text x="200" y="270" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="180" font-weight="500" fill="rgb(235,112,152)" fill-opacity="0.9">M</text>
+</svg>
