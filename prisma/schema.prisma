@@ -11,7 +11,8 @@ datasource db {
 }
 
 // ---------------------------------------------------------------------------
-// Auth.js (NextAuth) required models — Google OAuth only, no credentials login.
+// Auth.js (NextAuth) required models.
+// Google OAuth 走 Account/Session；本地账号密码走下面 User.username/password。
 // ---------------------------------------------------------------------------
 
 model Account {
@@ -56,7 +57,9 @@ model VerificationToken {
 
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
+  email     String?  @unique // Google 登录用户回填；本地账号密码用户可为空
+  username  String?  @unique // 本地账号密码登录用；见 auth.ts 的 Credentials provider
+  password  String? // bcrypt 哈希，仅本地账号密码用户有值，绝不存明文
   name      String?
   avatarUrl String?
   googleId  String?  @unique // Google 返回的 sub，账号首次关联时回填，见 auth.ts 的 linkAccount 事件

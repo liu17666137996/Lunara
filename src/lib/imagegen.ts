@@ -13,9 +13,11 @@ const SAFETY_SUFFIX =
 /**
  * Calls the 火山方舟 图片生成 (doubao-seedream) endpoint. Returns a temporary
  * TOS url (signed, expires in ~24h) — callers must re-upload to R2 for
- * durable storage.
+ * durable storage. When `referenceImageUrl` is given, does image-to-image
+ * generation so the output keeps the character's actual appearance instead
+ * of a purely text-imagined face.
  */
-export async function generateImage(prompt: string): Promise<Buffer> {
+export async function generateImage(prompt: string, referenceImageUrl?: string): Promise<Buffer> {
   const res = await fetch(`${ARK_BASE_URL}/images/generations`, {
     method: "POST",
     headers: {
@@ -25,6 +27,7 @@ export async function generateImage(prompt: string): Promise<Buffer> {
     body: JSON.stringify({
       model: process.env.ARK_IMAGE_MODEL,
       prompt: `${prompt}${SAFETY_SUFFIX}`,
+      ...(referenceImageUrl ? { image: referenceImageUrl } : {}),
       sequential_image_generation: "disabled",
       response_format: "url",
       size: "2K",
@@ -63,13 +66,14 @@ export async function generateCharacterPhoto(
   hint?: string
 ): Promise<string> {
   const prompt = [
-    `根据这份角色信息，生成一张符合她真实形象的生活照，角色信息：${character.systemPrompt}`,
+    "以参考图中的人物为准，保持同一个人的五官、脸型和发型不变，生成一张她的新生活照，只改变场景、姿势、穿着或光线。",
+    `角色信息：${character.systemPrompt}`,
     contextSummary ? `最近的聊天上下文：\n${contextSummary}` : "",
     hint ? `用户希望看到：${hint}` : "",
   ]
     .filter(Boolean)
     .join("\n\n");
 
-  const buffer = await generateImage(prompt);
+  const buffer = await generateImage(prompt, character.baseImageUrl);
   return uploadToR2("images", buffer, "image/jpeg", "jpg");
 }

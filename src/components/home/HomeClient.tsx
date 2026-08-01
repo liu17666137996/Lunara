@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { CharacterCard } from "@/components/CharacterCard";
-import { GoogleSignInButton, SignOutButton } from "@/components/AuthButtons";
+import { SignOutButton } from "@/components/AuthButtons";
 import { characterAccent } from "@/lib/character-theme";
 import { setGuestCharacterKey } from "@/lib/guest-storage";
 import type { CharacterSummary } from "@/types/domain";
@@ -61,7 +62,12 @@ export function HomeClient({
             <SignOutButton />
           </div>
         ) : (
-          <GoogleSignInButton />
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 rounded-full bg-paper px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-paper-dim"
+          >
+            登录 / 注册
+          </Link>
         )}
       </header>
 

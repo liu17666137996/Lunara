@@ -18,12 +18,13 @@ interface CharacterJson {
   personality: { core_traits: string[] };
   system_prompt_template: string;
   image_url?: string;
+  voice_id?: string;
 }
 
 // 仓库根目录下的 6 份角色人设文件（*-character.json）。
 const CHARACTER_KEYS = ["ava", "emma", "luna", "mia", "olivia", "sophia"] as const;
 
-// SPEC 里的语音示例只给了一个 speaker id，先全员复用，后续替换为每个角色专属音色。
+// 角色 JSON 未填 voice_id 时的兜底音色。
 const DEFAULT_VOICE_ID = "zh_female_vv_uranus_bigtts";
 
 function loadCharacterJson(key: string): CharacterJson {
@@ -46,6 +47,7 @@ async function main() {
     const data = loadCharacterJson(key);
     // 有真实形象图（image_url）就用它，没有的话退回占位卡片图。
     const avatarUrl = data.image_url ?? `/characters/${key}.svg`;
+    const voiceId = data.voice_id ?? DEFAULT_VOICE_ID;
 
     await prisma.character.upsert({
       where: { key },
@@ -59,7 +61,7 @@ async function main() {
         avatarUrl,
         baseImageUrl: avatarUrl,
         systemPrompt: data.system_prompt_template,
-        voiceId: DEFAULT_VOICE_ID,
+        voiceId,
         profile: data as unknown as object,
       },
       update: {
@@ -71,6 +73,7 @@ async function main() {
         avatarUrl,
         baseImageUrl: avatarUrl,
         systemPrompt: data.system_prompt_template,
+        voiceId,
         profile: data as unknown as object,
       },
     });
