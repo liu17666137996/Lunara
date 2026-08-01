@@ -33,6 +33,8 @@ export default function LoginPage() {
 
     setPending(true);
     try {
+      let loginToken = turnstileToken;
+
       if (mode === "register") {
         const res = await fetch("/api/auth/register", {
           method: "POST",
@@ -45,12 +47,21 @@ export default function LoginPage() {
           resetCaptcha();
           return;
         }
+
+        // 上面这次请求已经把 token 消耗掉了（一次性），紧接着的自动登录需要一个新的。
+        const freshToken = await turnstileRef.current?.getFreshToken();
+        if (!freshToken) {
+          setError("人机验证已过期，请重新验证后再试一次。");
+          resetCaptcha();
+          return;
+        }
+        loginToken = freshToken;
       }
 
       const result = await signIn("credentials", {
         username,
         password,
-        turnstileToken,
+        turnstileToken: loginToken,
         redirect: false,
       });
 
