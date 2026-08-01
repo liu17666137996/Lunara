@@ -5,10 +5,12 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { getClientIp, verifyTurnstileToken } from "@/lib/turnstile";
 
 const credentialsSchema = z.object({
   username: z.string().trim().min(1),
   password: z.string().min(1),
+  turnstileToken: z.string().min(1),
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -26,11 +28,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         username: { label: "用户名", type: "text" },
         password: { label: "密码", type: "password" },
+        turnstileToken: { label: "Turnstile Token", type: "text" },
       },
-      async authorize(raw) {
+      async authorize(raw, request) {
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success) return null;
-        const { username, password } = parsed.data;
+        const { username, password, turnstileToken } = parsed.data;
+
+        const captchaOk = await verifyTurnstileToken(turnstileToken, getClientIp(request));
+        if (!captchaOk) return null;
 
         const user = await prisma.user.findUnique({ where: { username } });
         if (!user?.password) return null;

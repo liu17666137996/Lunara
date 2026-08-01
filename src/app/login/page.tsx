@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Turnstile, type TurnstileHandle } from "@/components/Turnstile";
 
 type Mode = "login" | "register";
 
@@ -13,22 +14,35 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<TurnstileHandle | null>(null);
+
+  function resetCaptcha() {
+    setTurnstileToken("");
+    turnstileRef.current?.reset();
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setPending(true);
 
+    if (!turnstileToken) {
+      setError("请先完成人机验证。");
+      return;
+    }
+
+    setPending(true);
     try {
       if (mode === "register") {
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
+          body: JSON.stringify({ username, password, turnstileToken }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           setError(data.error ?? "注册失败，请稍后重试。");
+          resetCaptcha();
           return;
         }
       }
@@ -36,11 +50,13 @@ export default function LoginPage() {
       const result = await signIn("credentials", {
         username,
         password,
+        turnstileToken,
         redirect: false,
       });
 
       if (result?.error) {
         setError("用户名或密码不正确。");
+        resetCaptcha();
         return;
       }
 
@@ -108,11 +124,13 @@ export default function LoginPage() {
           />
         </label>
 
+        <Turnstile ref={turnstileRef} onToken={setTurnstileToken} className="mt-1" />
+
         {error && <p className="text-sm text-rose">{error}</p>}
 
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || !turnstileToken}
           className="mt-2 rounded-full bg-ember px-5 py-2.5 text-sm font-medium text-ink transition-opacity disabled:opacity-40"
         >
           {pending ? "处理中…" : mode === "login" ? "登录" : "注册并登录"}

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getClientIp, verifyTurnstileToken } from "@/lib/turnstile";
 
 const registerSchema = z.object({
   username: z
@@ -12,6 +13,7 @@ const registerSchema = z.object({
     .max(30, "用户名最多 30 个字符")
     .regex(/^[\w一-龥]+$/, "用户名只能包含字母、数字、下划线或中文"),
   password: z.string().min(6, "密码至少 6 位"),
+  turnstileToken: z.string().min(1, "请完成人机验证"),
 });
 
 export async function POST(request: Request) {
@@ -24,7 +26,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const { username, password } = parsed.data;
+  const { username, password, turnstileToken } = parsed.data;
+
+  const captchaOk = await verifyTurnstileToken(turnstileToken, getClientIp(request));
+  if (!captchaOk) {
+    return NextResponse.json({ error: "人机验证未通过，请重试" }, { status: 400 });
+  }
+
   const passwordHash = await bcrypt.hash(password, 12);
 
   try {
