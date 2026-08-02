@@ -32,7 +32,7 @@ export async function generateImage(prompt: string, referenceImageUrl?: string):
       response_format: "url",
       size: "2K",
       stream: false,
-      watermark: true,
+      watermark: false,
     }),
   });
 
