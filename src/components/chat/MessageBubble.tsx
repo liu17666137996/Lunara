@@ -79,6 +79,15 @@ export function MessageBubble({
         </div>
       )}
 
+      {isUser && (
+        <div
+          className="mt-1 h-7 w-7 shrink-0 rounded-full border border-line bg-ink-2 text-center text-[10px] leading-7 text-paper-dim"
+          aria-hidden
+        >
+          我
+        </div>
+      )}
+
       <div className={`flex max-w-[75%] flex-col gap-1.5 ${isUser ? "items-end" : "items-start"}`}>
         {message.type === "IMAGE" && message.mediaUrl && (
           <a href={message.mediaUrl} target="_blank" rel="noreferrer">
