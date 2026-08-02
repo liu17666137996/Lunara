@@ -110,7 +110,7 @@ export function ChatInput({
   }
 
   return (
-    <div className="border-t border-line bg-ink-2 px-3 py-3">
+    <div className="shrink-0 border-t border-line bg-ink-2 px-3 py-3">
       <div className="flex items-end gap-2">
         <input
           ref={fileInputRef}

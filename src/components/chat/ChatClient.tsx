@@ -316,12 +316,14 @@ export function ChatClient(props: Props) {
   }
 
   if (!character) {
-    return <div className="flex flex-1 items-center justify-center text-mist">加载中…</div>;
+    return (
+      <div className="flex h-[calc(100dvh-3.5rem)] items-center justify-center text-mist">加载中…</div>
+    );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
-      <header className="flex items-center gap-3 border-b border-line bg-ink-2 px-4 py-3">
+    <div className="mx-auto flex h-[calc(100dvh-3.5rem)] w-full max-w-2xl flex-col overflow-hidden">
+      <header className="shrink-0 flex items-center gap-3 border-b border-line bg-ink-2 px-4 py-3">
         <div
           className="h-9 w-9 shrink-0 rounded-full text-center text-sm leading-9 text-ink"
           style={{ background: accent }}
@@ -349,11 +351,11 @@ export function ChatClient(props: Props) {
       </div>
 
       {sendError && (
-        <p className="border-t border-line bg-ink-2 px-4 py-2 text-center text-xs text-rose">{sendError}</p>
+        <p className="shrink-0 border-t border-line bg-ink-2 px-4 py-2 text-center text-xs text-rose">{sendError}</p>
       )}
 
       {access && !access.canChat ? (
-        <div className="border-t border-line bg-ink-2 px-4 py-4 text-center">
+        <div className="shrink-0 border-t border-line bg-ink-2 px-4 py-4 text-center">
           <p className="text-sm text-paper-dim">7 天试用已经结束，开通会员继续和 {character.name} 聊天吧。</p>
           <Link
             href="/billing"
@@ -366,7 +368,7 @@ export function ChatClient(props: Props) {
       ) : (
         <>
           {access && access.trialDaysLeft != null && access.trialDaysLeft <= TRIAL_WARNING_DAYS && (
-            <div className="flex items-center justify-between gap-3 border-t border-line bg-ink-2 px-4 py-2">
+            <div className="shrink-0 flex items-center justify-between gap-3 border-t border-line bg-ink-2 px-4 py-2">
               <p className="text-xs text-paper-dim">
                 试用还剩 {access.trialDaysLeft} 天，提前开通会员就不会中断和 {character.name} 的聊天啦。
               </p>
