@@ -72,3 +72,62 @@ body {
   background: var(--ember);
   color: var(--ink);
 }
+
+/*
+ * card-fan-carousel（components/ui/card-fan-carousel.tsx）用到的卡片尺寸。
+ * 断点高度对应组件里 getHeightMultiplier() 注释的 idealPx（22/26/28/34/38rem），
+ * 卡片宽度按参考图 400x700 的比例推出，来源代码片段里没带这段 CSS，如果你有
+ * 原版数值，把下面的宽高换掉就行。
+ */
+.fan-layout {
+  height: 22rem;
+}
+.fan-card {
+  position: absolute;
+  width: 12.5rem;
+  height: 22rem;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.45);
+  will-change: transform;
+}
+
+@media (min-width: 480px) {
+  .fan-layout {
+    height: 26rem;
+  }
+  .fan-card {
+    width: 14.5rem;
+    height: 26rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .fan-layout {
+    height: 28rem;
+  }
+  .fan-card {
+    width: 16rem;
+    height: 28rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .fan-layout {
+    height: 34rem;
+  }
+  .fan-card {
+    width: 19.5rem;
+    height: 34rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .fan-layout {
+    height: 38rem;
+  }
+  .fan-card {
+    width: 21.5rem;
+    height: 38rem;
+  }
+}

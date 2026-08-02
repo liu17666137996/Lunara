@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CharacterCard } from "@/components/CharacterCard";
+import SocialCards from "@/components/ui/card-fan-carousel";
 import { characterAccent } from "@/lib/character-theme";
 import { setGuestCharacterKey } from "@/lib/guest-storage";
 import type { CharacterSummary } from "@/types/domain";
@@ -64,6 +65,8 @@ export function HomeClient({
             </p>
             {error && <p className="mt-3 text-sm text-rose">{error}</p>}
           </section>
+
+          <SocialCards cards={characters.map((c) => ({ imgUrl: c.avatarUrl, alt: c.name }))} />
 
           <section className="mt-8 grid grid-cols-2 gap-4 pb-16 sm:mt-10 sm:grid-cols-3 sm:gap-6">
             {characters.map((c) => (
