@@ -4,15 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { buildSystemPrompt } from "@/lib/prompt";
 import { chatComplete, type ChatMessage } from "@/lib/llm";
 import { generateCharacterPhoto, generateScenePhoto } from "@/lib/imagegen";
+import { extractPhotoMarkers } from "@/lib/photo-markers";
 import { scoreExchange, affinityDelta, clampAffinity } from "@/lib/affinity";
 import { containsBlockedContent, SAFE_REFUSAL_REPLY } from "@/lib/moderation";
 
 export const maxDuration = 60;
-
-// 角色决定发照片时，会在回复文字末尾加标记，格式：[[SEND_PHOTO: 场景描述]]（她本人在照片里）
-// 或 [[SEND_SCENE: 场景描述]]（纯风景/地点，没有她本人），见 lib/prompt.ts。一次回复最多两张。
-const PHOTO_MARKER_RE = /\[\[SEND_(PHOTO|SCENE):?\s*([^\]]*)\]\]/gi;
-const MAX_PHOTOS_PER_REPLY = 2;
 
 const bodySchema = z.object({
   characterKey: z.string().min(1),
@@ -58,8 +54,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "llm_unavailable" }, { status: 502 });
   }
 
-  const photoMarkers = [...rawReply.matchAll(PHOTO_MARKER_RE)].slice(0, MAX_PHOTOS_PER_REPLY);
-  const reply = rawReply.replace(PHOTO_MARKER_RE, "").trim() || (photoMarkers.length ? "给你看～" : "");
+  const { markers: photoMarkers, strippedText } = extractPhotoMarkers(rawReply);
+  const reply = strippedText || (photoMarkers.length ? "给你看～" : "");
 
   let imageUrls: string[] | undefined;
   if (photoMarkers.length) {
@@ -68,10 +64,10 @@ export async function POST(req: Request) {
       .join("\n");
 
     const results = await Promise.allSettled(
-      photoMarkers.map(([, kind, hint]) =>
-        kind.toUpperCase() === "SCENE"
-          ? generateScenePhoto(character, contextSummary, hint?.trim())
-          : generateCharacterPhoto(character, contextSummary, hint?.trim())
+      photoMarkers.map((marker) =>
+        marker.kind === "SCENE"
+          ? generateScenePhoto(character, contextSummary, marker.hint)
+          : generateCharacterPhoto(character, contextSummary, marker.hint)
       )
     );
     imageUrls = results
