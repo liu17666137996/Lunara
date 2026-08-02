@@ -72,11 +72,7 @@ export function BillingClient({
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-10 sm:px-10">
-      <button onClick={() => router.push("/chat")} className="w-fit text-sm text-mist hover:text-paper">
-        ← 返回聊天
-      </button>
-
-      <h1 className="mt-4 font-display text-3xl text-paper">开通会员</h1>
+      <h1 className="font-display text-3xl text-paper">开通会员</h1>
       <p className="mt-2 text-sm text-paper-dim">
         {access.trialExpired
           ? "7 天试用已结束，开通会员后可以继续聊天、保留记忆和历史消息。"

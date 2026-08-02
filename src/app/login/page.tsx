@@ -83,10 +83,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center px-6 py-12">
-      <span className="font-display text-xl tracking-wide text-paper">Lunara</span>
-
-      <div className="mt-8 flex gap-6 border-b border-line">
+    <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-12">
+      <div className="flex gap-6 border-b border-line">
         {(
           [
             ["login", "登录"],

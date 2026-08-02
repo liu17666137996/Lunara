@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Fraunces, Noto_Sans_SC } from "next/font/google";
 import { Providers } from "@/components/Providers";
+import { NavBar } from "@/components/NavBar";
+import { auth } from "@/lib/auth";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -22,11 +24,13 @@ export const metadata: Metadata = {
   description: "一个只属于你的虚拟女友聊天陪伴空间。",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="zh" className={`${fraunces.variable} ${notoSansSC.variable} h-full`}>
       <body className="min-h-full flex flex-col font-sans antialiased bg-ink text-paper">
@@ -45,7 +49,10 @@ export default function RootLayout({
           {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
           plausible.init()`}
         </Script>
-        <Providers>{children}</Providers>
+        <Providers>
+          <NavBar isLoggedIn={!!session?.user} userName={session?.user?.name ?? null} />
+          {children}
+        </Providers>
       </body>
     </html>
   );

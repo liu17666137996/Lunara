@@ -2,22 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
 import { CharacterCard } from "@/components/CharacterCard";
-import { SignOutButton } from "@/components/AuthButtons";
 import { characterAccent } from "@/lib/character-theme";
 import { setGuestCharacterKey } from "@/lib/guest-storage";
 import type { CharacterSummary } from "@/types/domain";
 
 export function HomeClient({
   isLoggedIn,
-  userName,
   characters,
   currentCharacter,
 }: {
   isLoggedIn: boolean;
-  userName: string | null;
   characters: CharacterSummary[];
   currentCharacter: CharacterSummary | null;
 }) {
@@ -54,23 +50,6 @@ export function HomeClient({
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-8 sm:px-10">
-      <header className="flex items-center justify-between">
-        <span className="font-display text-xl tracking-wide text-paper">Lunara</span>
-        {isLoggedIn ? (
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-mist">{userName}</span>
-            <SignOutButton />
-          </div>
-        ) : (
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 rounded-full bg-paper px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-paper-dim"
-          >
-            登录 / 注册
-          </Link>
-        )}
-      </header>
-
       {currentCharacter ? (
         <SpotlightSection character={currentCharacter} router={router} />
       ) : (
@@ -114,14 +93,21 @@ function SpotlightSection({
   return (
     <section className="mt-10 flex flex-1 flex-col items-center justify-center gap-8 pb-16 sm:mt-16 sm:flex-row sm:items-stretch">
       <div
-        className="relative aspect-[3/4] w-full max-w-xs overflow-hidden rounded-2xl border border-line"
+        className="relative aspect-[3/4] w-full max-w-xs overflow-hidden rounded-2xl border border-line sm:max-w-sm md:max-w-md lg:max-w-lg"
         style={{ boxShadow: `0 0 60px -20px ${accent}` }}
       >
-        <Image src={character.avatarUrl} alt={character.name} fill className="object-cover" />
+        <Image
+          src={character.avatarUrl}
+          alt={character.name}
+          fill
+          sizes="(min-width: 1024px) 32rem, (min-width: 640px) 50vw, 100vw"
+          className="object-cover"
+          priority
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent" />
       </div>
 
-      <div className="flex max-w-sm flex-col justify-center gap-4">
+      <div className="flex max-w-sm flex-col justify-center gap-4 lg:max-w-md">
         <p className="text-xs uppercase tracking-[0.3em] text-mist">你的专属</p>
         <h2 className="font-display text-4xl text-paper">{character.name}</h2>
         <p className="text-sm italic text-paper-dim font-display">“{character.tagline}”</p>

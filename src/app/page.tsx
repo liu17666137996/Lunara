@@ -44,7 +44,6 @@ export default async function HomePage() {
   return (
     <HomeClient
       isLoggedIn={!!session?.user}
-      userName={session?.user?.name ?? null}
       characters={characters}
       currentCharacter={currentCharacter}
     />

@@ -322,9 +322,6 @@ export function ChatClient(props: Props) {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
       <header className="flex items-center gap-3 border-b border-line bg-ink-2 px-4 py-3">
-        <Link href="/" aria-label="返回" className="text-mist transition-colors hover:text-paper">
-          ←
-        </Link>
         <div
           className="h-9 w-9 shrink-0 rounded-full text-center text-sm leading-9 text-ink"
           style={{ background: accent }}
