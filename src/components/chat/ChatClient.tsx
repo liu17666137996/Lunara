@@ -168,11 +168,16 @@ export function ChatClient(props: Props) {
       setSendError("消息没有发送成功，请重试。");
       return;
     }
-    const data: { userMessage: MessageDTO; assistantMessage: MessageDTO; assistantImageMessage?: MessageDTO } =
-      await res.json();
+    const data: {
+      userMessage: MessageDTO;
+      assistantMessage: MessageDTO;
+      assistantImageMessages?: MessageDTO[];
+    } = await res.json();
     setMessages((prev) => {
       const next = [...prev.slice(0, -1), fromMessageDTO(data.userMessage), fromMessageDTO(data.assistantMessage)];
-      return data.assistantImageMessage ? [...next, fromMessageDTO(data.assistantImageMessage)] : next;
+      return data.assistantImageMessages
+        ? [...next, ...data.assistantImageMessages.map(fromMessageDTO)]
+        : next;
     });
     fetchAssistantAudio(data.assistantMessage.id);
   }
@@ -196,7 +201,7 @@ export function ChatClient(props: Props) {
       setSendError("消息没有发送成功，请重试。");
       return;
     }
-    const data: { reply: string; affinity: number; imageUrl?: string } = await res.json();
+    const data: { reply: string; affinity: number; imageUrls?: string[] } = await res.json();
 
     const assistantMsg: DisplayMessage = {
       id: `guest-${Date.now()}`,
@@ -207,20 +212,18 @@ export function ChatClient(props: Props) {
       audioUrl: null,
       createdAt: new Date().toISOString(),
     };
-    const assistantImageMsg: DisplayMessage | null = data.imageUrl
-      ? {
-          id: `guest-${Date.now()}-photo`,
-          role: "assistant",
-          type: "IMAGE",
-          content: null,
-          mediaUrl: data.imageUrl,
-          audioUrl: null,
-          createdAt: new Date().toISOString(),
-        }
-      : null;
+    const assistantImageMsgs: DisplayMessage[] = (data.imageUrls ?? []).map((url, i) => ({
+      id: `guest-${Date.now()}-photo-${i}`,
+      role: "assistant",
+      type: "IMAGE",
+      content: null,
+      mediaUrl: url,
+      audioUrl: null,
+      createdAt: new Date().toISOString(),
+    }));
 
     setMessages((prev) => {
-      const next = assistantImageMsg ? [...prev, assistantMsg, assistantImageMsg] : [...prev, assistantMsg];
+      const next = [...prev, assistantMsg, ...assistantImageMsgs];
       persistGuestHistory(next);
       return next;
     });

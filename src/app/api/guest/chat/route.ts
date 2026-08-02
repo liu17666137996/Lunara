@@ -3,14 +3,16 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { buildSystemPrompt } from "@/lib/prompt";
 import { chatComplete, type ChatMessage } from "@/lib/llm";
-import { generateCharacterPhoto } from "@/lib/imagegen";
+import { generateCharacterPhoto, generateScenePhoto } from "@/lib/imagegen";
 import { scoreExchange, affinityDelta, clampAffinity } from "@/lib/affinity";
 import { containsBlockedContent, SAFE_REFUSAL_REPLY } from "@/lib/moderation";
 
 export const maxDuration = 60;
 
-// 角色决定发照片时，会在回复文字末尾加上这个标记，格式：[[SEND_PHOTO: 场景描述]]（见 lib/prompt.ts）。
-const PHOTO_MARKER_RE = /\[\[SEND_PHOTO:?\s*([^\]]*)\]\]/i;
+// 角色决定发照片时，会在回复文字末尾加标记，格式：[[SEND_PHOTO: 场景描述]]（她本人在照片里）
+// 或 [[SEND_SCENE: 场景描述]]（纯风景/地点，没有她本人），见 lib/prompt.ts。一次回复最多两张。
+const PHOTO_MARKER_RE = /\[\[SEND_(PHOTO|SCENE):?\s*([^\]]*)\]\]/gi;
+const MAX_PHOTOS_PER_REPLY = 2;
 
 const bodySchema = z.object({
   characterKey: z.string().min(1),
@@ -56,23 +58,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "llm_unavailable" }, { status: 502 });
   }
 
-  const photoMatch = rawReply.match(PHOTO_MARKER_RE);
-  const reply = rawReply.replace(PHOTO_MARKER_RE, "").trim() || (photoMatch ? "给你看～" : "");
+  const photoMarkers = [...rawReply.matchAll(PHOTO_MARKER_RE)].slice(0, MAX_PHOTOS_PER_REPLY);
+  const reply = rawReply.replace(PHOTO_MARKER_RE, "").trim() || (photoMarkers.length ? "给你看～" : "");
 
-  let imageUrl: string | undefined;
-  if (photoMatch) {
-    try {
-      const contextSummary = [...history.slice(-6), { role: "user" as const, content: message }]
-        .map((h) => `${h.role === "user" ? "用户" : character.name}: ${h.content}`)
-        .join("\n");
-      imageUrl = await generateCharacterPhoto(character, contextSummary, photoMatch[1]?.trim());
-    } catch (err) {
-      console.error("guest auto photo generation failed", err);
-    }
+  let imageUrls: string[] | undefined;
+  if (photoMarkers.length) {
+    const contextSummary = [...history.slice(-6), { role: "user" as const, content: message }]
+      .map((h) => `${h.role === "user" ? "用户" : character.name}: ${h.content}`)
+      .join("\n");
+
+    const results = await Promise.allSettled(
+      photoMarkers.map(([, kind, hint]) =>
+        kind.toUpperCase() === "SCENE"
+          ? generateScenePhoto(character, contextSummary, hint?.trim())
+          : generateCharacterPhoto(character, contextSummary, hint?.trim())
+      )
+    );
+    imageUrls = results
+      .filter((r): r is PromiseFulfilledResult<string> => {
+        if (r.status !== "fulfilled") {
+          console.error("guest auto photo generation failed", r.reason);
+          return false;
+        }
+        return true;
+      })
+      .map((r) => r.value);
+    if (imageUrls.length === 0) imageUrls = undefined;
   }
 
   const score = await scoreExchange(character, message);
   const nextAffinity = clampAffinity(affinity + affinityDelta(score));
 
-  return NextResponse.json({ reply, affinity: nextAffinity, imageUrl });
+  return NextResponse.json({ reply, affinity: nextAffinity, imageUrls });
 }

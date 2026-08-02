@@ -77,3 +77,26 @@ export async function generateCharacterPhoto(
   const buffer = await generateImage(prompt, character.baseImageUrl);
   return uploadToR2("images", buffer, "image/jpeg", "jpg");
 }
+
+/**
+ * 和 generateCharacterPhoto 的区别：不带参考图做 image-to-image，也不要求
+ * "保持同一个人的五官不变"——用于角色分享的风景/地点/物品照片，画面主体不是她本人，
+ * 顶多有路人剪影。对应 chat/send 里 [[SEND_SCENE: ...]] 标记。
+ */
+export async function generateScenePhoto(
+  character: Character,
+  contextSummary: string,
+  hint?: string
+): Promise<string> {
+  const prompt = [
+    "生成一张真实自然的生活/旅行照片，手机随手拍的质感，不是网红摆拍。画面主体是风景、地点或物品本身，不需要清晰的人物肖像特写，可以有路人的剪影或背影但不是焦点。",
+    `角色信息（帮助判断照片的地点、氛围是否符合她的经历和喜好）：${character.systemPrompt}`,
+    contextSummary ? `最近的聊天上下文：\n${contextSummary}` : "",
+    hint ? `照片描述：${hint}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const buffer = await generateImage(prompt);
+  return uploadToR2("images", buffer, "image/jpeg", "jpg");
+}

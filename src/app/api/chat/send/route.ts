@@ -5,7 +5,7 @@ import { requireUserId } from "@/lib/require-user";
 import { getAccessStatus } from "@/lib/billing";
 import { buildSystemPrompt } from "@/lib/prompt";
 import { chatComplete, type ChatMessage } from "@/lib/llm";
-import { generateCharacterPhoto } from "@/lib/imagegen";
+import { generateCharacterPhoto, generateScenePhoto } from "@/lib/imagegen";
 import { extractAndSaveMemory } from "@/lib/memory";
 import { scoreExchange, affinityDelta, clampAffinity } from "@/lib/affinity";
 import { containsBlockedContent, SAFE_REFUSAL_REPLY } from "@/lib/moderation";
@@ -13,8 +13,10 @@ import { containsBlockedContent, SAFE_REFUSAL_REPLY } from "@/lib/moderation";
 export const maxDuration = 60;
 
 const HISTORY_LIMIT = 20;
-// 角色决定发照片时，会在回复文字末尾加上这个标记，格式：[[SEND_PHOTO: 场景描述]]（见 lib/prompt.ts）。
-const PHOTO_MARKER_RE = /\[\[SEND_PHOTO:?\s*([^\]]*)\]\]/i;
+// 角色决定发照片时，会在回复文字末尾加标记，格式：[[SEND_PHOTO: 场景描述]]（她本人在照片里）
+// 或 [[SEND_SCENE: 场景描述]]（纯风景/地点，没有她本人），见 lib/prompt.ts。一次回复最多两张。
+const PHOTO_MARKER_RE = /\[\[SEND_(PHOTO|SCENE):?\s*([^\]]*)\]\]/gi;
+const MAX_PHOTOS_PER_REPLY = 2;
 
 const bodySchema = z.object({
   type: z.enum(["TEXT", "IMAGE", "AUDIO"]),
@@ -111,8 +113,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "llm_unavailable" }, { status: 502 });
   }
 
-  const photoMatch = rawReplyText.match(PHOTO_MARKER_RE);
-  const replyText = rawReplyText.replace(PHOTO_MARKER_RE, "").trim() || (photoMatch ? "给你看～" : "");
+  const photoMarkers = [...rawReplyText.matchAll(PHOTO_MARKER_RE)].slice(0, MAX_PHOTOS_PER_REPLY);
+  const replyText = rawReplyText.replace(PHOTO_MARKER_RE, "").trim() || (photoMarkers.length ? "给你看～" : "");
 
   const assistantMessage = await prisma.message.create({
     data: {
@@ -124,25 +126,37 @@ export async function POST(req: Request) {
     },
   });
 
-  let assistantImageMessage = null;
-  if (photoMatch) {
-    try {
-      const contextSummary = chronological
-        .slice(-6)
-        .map((m) => `${m.role === "USER" ? "用户" : userCharacter.character.name}: ${m.content ?? ""}`)
-        .join("\n");
-      const imageUrl = await generateCharacterPhoto(userCharacter.character, contextSummary, photoMatch[1]?.trim());
-      assistantImageMessage = await prisma.message.create({
-        data: {
-          userId,
-          characterId: userCharacter.characterId,
-          role: "ASSISTANT",
-          type: "IMAGE",
-          mediaUrl: imageUrl,
-        },
-      });
-    } catch (err) {
-      console.error("Auto photo generation failed", err);
+  const assistantImageMessages = [];
+  if (photoMarkers.length) {
+    const contextSummary = chronological
+      .slice(-6)
+      .map((m) => `${m.role === "USER" ? "用户" : userCharacter.character.name}: ${m.content ?? ""}`)
+      .join("\n");
+
+    const results = await Promise.allSettled(
+      photoMarkers.map(([, kind, hint]) =>
+        kind.toUpperCase() === "SCENE"
+          ? generateScenePhoto(userCharacter.character, contextSummary, hint?.trim())
+          : generateCharacterPhoto(userCharacter.character, contextSummary, hint?.trim())
+      )
+    );
+
+    for (const result of results) {
+      if (result.status !== "fulfilled") {
+        console.error("Auto photo generation failed", result.reason);
+        continue;
+      }
+      assistantImageMessages.push(
+        await prisma.message.create({
+          data: {
+            userId,
+            characterId: userCharacter.characterId,
+            role: "ASSISTANT",
+            type: "IMAGE",
+            mediaUrl: result.value,
+          },
+        })
+      );
     }
   }
 
@@ -163,7 +177,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     userMessage,
     assistantMessage,
-    assistantImageMessage: assistantImageMessage ?? undefined,
+    assistantImageMessages: assistantImageMessages.length ? assistantImageMessages : undefined,
     access: getAccessStatus(user),
   });
 }
