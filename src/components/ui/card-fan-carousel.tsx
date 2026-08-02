@@ -254,7 +254,9 @@ export default function SocialCards({ cards }: SocialCardsProps) {
           ease: "elastic.out(1,.75)",
           overwrite: "auto",
         });
-        gsap.set(el, { zIndex: base.zIndex });
+        // 悬停的卡片要盖在其它卡片上面，不能用它原本槽位的 zIndex（那可能比旁边卡片还低）。
+        const zIndex = hoveredSlot !== null && slot === hoveredSlot ? 50 : base.zIndex;
+        gsap.set(el, { zIndex });
       });
     };
 
