@@ -5,13 +5,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/AuthButtons";
 
-const BASE_LINKS = [{ href: "/chat", label: "聊天" }];
+const LINKS = [
+  { href: "/", label: "首页" },
+  { href: "/billing", label: "价格" },
+  { href: "/blog", label: "博客" },
+  { href: "/about", label: "关于我们" },
+];
 
 export function NavBar({ isLoggedIn, userName }: { isLoggedIn: boolean; userName: string | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const links = isLoggedIn ? [...BASE_LINKS, { href: "/billing", label: "会员" }] : BASE_LINKS;
   const showAuthCta = !isLoggedIn && pathname !== "/login";
 
   return (
@@ -21,8 +25,8 @@ export function NavBar({ isLoggedIn, userName }: { isLoggedIn: boolean; userName
           Lunara
         </Link>
 
-        <nav className="hidden items-center gap-6 sm:flex">
-          {links.map((link) => (
+        <nav className="hidden items-center gap-6 md:flex">
+          {LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -35,7 +39,7 @@ export function NavBar({ isLoggedIn, userName }: { isLoggedIn: boolean; userName
           ))}
         </nav>
 
-        <div className="hidden items-center gap-4 sm:flex">
+        <div className="hidden items-center gap-4 md:flex">
           {isLoggedIn ? (
             <>
               <span className="text-sm text-mist">{userName}</span>
@@ -47,7 +51,7 @@ export function NavBar({ isLoggedIn, userName }: { isLoggedIn: boolean; userName
                 href="/login"
                 className="inline-flex items-center gap-2 rounded-full bg-paper px-5 py-2 text-sm font-medium text-ink transition-colors hover:bg-paper-dim"
               >
-                登录 / 注册
+                登录
               </Link>
             )
           )}
@@ -57,15 +61,15 @@ export function NavBar({ isLoggedIn, userName }: { isLoggedIn: boolean; userName
           type="button"
           aria-label={open ? "关闭菜单" : "打开菜单"}
           onClick={() => setOpen((v) => !v)}
-          className="text-xl leading-none text-paper-dim sm:hidden"
+          className="text-xl leading-none text-paper-dim md:hidden"
         >
           {open ? "✕" : "☰"}
         </button>
       </div>
 
       {open && (
-        <nav className="flex flex-col gap-1 border-t border-line px-4 py-3 sm:hidden">
-          {links.map((link) => (
+        <nav className="flex flex-col gap-1 border-t border-line px-4 py-3 md:hidden">
+          {LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -90,7 +94,7 @@ export function NavBar({ isLoggedIn, userName }: { isLoggedIn: boolean; userName
                   onClick={() => setOpen(false)}
                   className="inline-flex items-center gap-2 rounded-full bg-paper px-5 py-2 text-sm font-medium text-ink"
                 >
-                  登录 / 注册
+                  登录
                 </Link>
               )}
             </div>
