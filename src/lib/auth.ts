@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
+import { CredentialsSignin } from "@auth/core/errors";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -12,6 +13,15 @@ const credentialsSchema = z.object({
   password: z.string().min(1),
   turnstileToken: z.string().min(1),
 });
+
+// authorize() 里区分出具体的失败原因，通过 code 带回客户端，
+// 避免"人机验证失败"和"用户名或密码错误"在页面上被误报成同一句话。
+class CaptchaFailed extends CredentialsSignin {
+  code = "captcha_failed";
+}
+class InvalidCredentials extends CredentialsSignin {
+  code = "invalid_credentials";
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
