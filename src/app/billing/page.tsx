@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAccessStatus } from "@/lib/billing";
@@ -7,8 +6,9 @@ import type { AccessStatus, CharacterSummary } from "@/types/domain";
 
 export default async function BillingPage() {
   const session = await auth();
+
   if (!session?.user?.id) {
-    redirect("/");
+    return <BillingClient access={null} currentCharacter={null} characters={[]} />;
   }
 
   const user = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });

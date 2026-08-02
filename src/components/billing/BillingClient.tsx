@@ -19,7 +19,7 @@ export function BillingClient({
   currentCharacter,
   characters,
 }: {
-  access: AccessStatus;
+  access: AccessStatus | null;
   currentCharacter: CharacterSummary | null;
   characters: CharacterSummary[];
 }) {
@@ -31,6 +31,10 @@ export function BillingClient({
   const [showSwitchPicker, setShowSwitchPicker] = useState(searchParams.get("intent") === "switch");
 
   async function subscribe(plan: PlanKey) {
+    if (!access) {
+      router.push("/login");
+      return;
+    }
     setError(null);
     setLoadingPlan(plan);
     try {
@@ -74,7 +78,9 @@ export function BillingClient({
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-10 sm:px-10">
       <h1 className="font-display text-3xl text-paper">开通会员</h1>
       <p className="mt-2 text-sm text-paper-dim">
-        {access.trialExpired
+        {!access
+          ? "登录后即可开始 7 天免费试用，随时开通会员解锁完整体验。"
+          : access.trialExpired
           ? "7 天试用已结束，开通会员后可以继续聊天、保留记忆和历史消息。"
           : access.trialDaysLeft != null
           ? `试用还剩 ${access.trialDaysLeft} 天，提前开通不会浪费剩余天数。`
