@@ -80,11 +80,11 @@ export function HomeClient({
         <>
           <section className="mt-10 max-w-xl sm:mt-16">
             <h1 className="mt-3 font-display text-4xl leading-tight text-paper sm:text-5xl">
-              值得信赖的AI女友
+              你的专属纸片女友
             </h1>
             <p className="mt-4 text-sm leading-relaxed text-paper-dim">
-              六位女孩，六种性格。选一位，开始只属于你们的对话。
-              {!isLoggedIn && "不登录也能先聊聊看，但关闭页面后对话就会清空——登录后可以保存记忆、语音和照片。"}
+              六位女孩，六种性格。选择一位，开始只属于你们的约会。
+              {!isLoggedIn && "登录后可以一直陪伴着你。"}
             </p>
             {error && <p className="mt-3 text-sm text-rose">{error}</p>}
           </section>
