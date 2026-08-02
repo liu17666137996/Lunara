@@ -12,17 +12,17 @@ function characterCardOverlay(character: CharacterSummary) {
   const accent = characterAccent(character.key);
   return (
     <>
-      <div className="pointer-events-none absolute inset-0 z-[15] bg-gradient-to-t from-ink via-ink/50 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-1.5 p-3 sm:p-4">
-        <div className="flex items-baseline gap-1.5">
-          <span className="font-display text-base text-paper sm:text-lg">{character.name}</span>
-          <span className="text-[10px] text-mist sm:text-[11px]">
+      <div className="pointer-events-none absolute inset-0 z-[15] bg-gradient-to-t from-ink via-ink/60 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-2 p-4 sm:p-5">
+        <div className="flex items-baseline gap-2">
+          <span className="font-display text-xl text-paper sm:text-2xl">{character.name}</span>
+          <span className="text-xs text-paper-dim sm:text-sm">
             {character.age}岁 · {character.occupation}
           </span>
         </div>
-        <p className="line-clamp-2 text-xs italic text-paper-dim font-display">“{character.tagline}”</p>
+        <p className="line-clamp-2 text-sm italic text-paper-dim font-display">“{character.tagline}”</p>
         <span
-          className="mt-1 inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-ink"
+          className="mt-1 inline-flex w-fit items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium text-ink"
           style={{ background: accent }}
         >
           选择她
