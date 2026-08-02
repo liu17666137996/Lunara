@@ -3,11 +3,34 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { CharacterCard } from "@/components/CharacterCard";
 import SocialCards from "@/components/ui/card-fan-carousel";
 import { characterAccent } from "@/lib/character-theme";
 import { setGuestCharacterKey } from "@/lib/guest-storage";
 import type { CharacterSummary } from "@/types/domain";
+
+function characterCardOverlay(character: CharacterSummary) {
+  const accent = characterAccent(character.key);
+  return (
+    <>
+      <div className="pointer-events-none absolute inset-0 z-[15] bg-gradient-to-t from-ink via-ink/50 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-1.5 p-3 sm:p-4">
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-display text-base text-paper sm:text-lg">{character.name}</span>
+          <span className="text-[10px] text-mist sm:text-[11px]">
+            {character.age}岁 · {character.occupation}
+          </span>
+        </div>
+        <p className="line-clamp-2 text-xs italic text-paper-dim font-display">“{character.tagline}”</p>
+        <span
+          className="mt-1 inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-ink"
+          style={{ background: accent }}
+        >
+          选择她
+        </span>
+      </div>
+    </>
+  );
+}
 
 export function HomeClient({
   isLoggedIn,
@@ -66,18 +89,15 @@ export function HomeClient({
             {error && <p className="mt-3 text-sm text-rose">{error}</p>}
           </section>
 
-          <SocialCards cards={characters.map((c) => ({ imgUrl: c.avatarUrl, alt: c.name }))} />
-
-          <section className="mt-8 grid grid-cols-2 gap-4 pb-16 sm:mt-10 sm:grid-cols-3 sm:gap-6">
-            {characters.map((c) => (
-              <CharacterCard
-                key={c.id}
-                character={c}
-                onSelect={handleSelect}
-                disabled={pendingId === c.id}
-              />
-            ))}
-          </section>
+          <SocialCards
+            cards={characters.map((c) => ({
+              imgUrl: c.avatarUrl,
+              alt: c.name,
+              content: characterCardOverlay(c),
+              onClick: () => handleSelect(c),
+              disabled: pendingId === c.id,
+            }))}
+          />
         </>
       )}
     </div>

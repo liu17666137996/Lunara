@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import gsap from "gsap";
 
 export interface CardItem {
   imgUrl: string;
   alt?: string;
   linkUrl?: string;
+  /** 卡片本身不是链接时可用：点击整张卡触发，比如"选择这个角色"。和 linkUrl 二选一。 */
+  onClick?: () => void;
+  disabled?: boolean;
+  /** 叠在图片上的自定义内容（名字、简介、CTA 之类），跟原图一起铺满卡片。 */
+  content?: ReactNode;
 }
 
 interface SocialCardsProps {
@@ -321,19 +326,39 @@ export default function SocialCards({ cards }: SocialCardsProps) {
                   alt={card.alt || `Card ${index}`}
                   className="absolute inset-0 w-full h-full object-cover z-10"
                 />
+                {card.content}
               </div>
             );
-            return card.linkUrl ? (
-              <a
-                key={index}
-                href={card.linkUrl}
-                target={card.linkUrl.startsWith("http") ? "_blank" : "_self"}
-                rel="noopener noreferrer"
-                className="fan-card block cursor-pointer"
-              >
-                {image}
-              </a>
-            ) : (
+
+            if (card.linkUrl) {
+              return (
+                <a
+                  key={index}
+                  href={card.linkUrl}
+                  target={card.linkUrl.startsWith("http") ? "_blank" : "_self"}
+                  rel="noopener noreferrer"
+                  className="fan-card block cursor-pointer"
+                >
+                  {image}
+                </a>
+              );
+            }
+
+            if (card.onClick) {
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={card.onClick}
+                  disabled={card.disabled}
+                  className="fan-card block appearance-none border-0 bg-transparent p-0 text-left cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {image}
+                </button>
+              );
+            }
+
+            return (
               <div key={index} className="fan-card">
                 {image}
               </div>
