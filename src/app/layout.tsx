@@ -37,6 +37,14 @@ export default function RootLayout({
             y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
           })(window, document, "clarity", "script", "xvzrxqcpko");`}
         </Script>
+        <Script
+          src="https://plausible.io/js/pa-wxN98naWwvOPOUjqWgXOH.js"
+          strategy="afterInteractive"
+        />
+        <Script id="plausible-init" strategy="afterInteractive">
+          {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+          plausible.init()`}
+        </Script>
         <Providers>{children}</Providers>
       </body>
     </html>
