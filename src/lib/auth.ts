@@ -1,7 +1,6 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
-import { CredentialsSignin } from "@auth/core/errors";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -42,17 +41,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(raw, request) {
         const parsed = credentialsSchema.safeParse(raw);
-        if (!parsed.success) return null;
+        if (!parsed.success) throw new InvalidCredentials();
         const { username, password, turnstileToken } = parsed.data;
 
         const captchaOk = await verifyTurnstileToken(turnstileToken, getClientIp(request));
-        if (!captchaOk) return null;
+        if (!captchaOk) throw new CaptchaFailed();
 
         const user = await prisma.user.findUnique({ where: { username } });
-        if (!user?.password) return null;
+        if (!user?.password) throw new InvalidCredentials();
 
         const valid = await bcrypt.compare(password, user.password);
-        if (!valid) return null;
+        if (!valid) throw new InvalidCredentials();
 
         return { id: user.id, name: user.name, email: user.email ?? undefined };
       },

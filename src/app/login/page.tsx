@@ -66,7 +66,11 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("用户名或密码不正确。");
+        if (result.code === "captcha_failed") {
+          setError("人机验证未通过，请重试。");
+        } else {
+          setError("用户名或密码不正确。");
+        }
         resetCaptcha();
         return;
       }
