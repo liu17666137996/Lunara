@@ -1,16 +1,17 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 import { Turnstile, type TurnstileHandle } from "@/components/Turnstile";
+import { GoogleSignInButton } from "@/components/AuthButtons";
 
 type Mode = "login" | "register";
 
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -33,43 +34,25 @@ export default function LoginPage() {
 
     setPending(true);
     try {
-      let loginToken = turnstileToken;
+      const fetchOptions = { headers: { "x-captcha-response": turnstileToken } };
 
-      if (mode === "register") {
-        const res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password, turnstileToken }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          setError(data.error ?? "注册失败，请稍后重试。");
-          resetCaptcha();
-          return;
-        }
+      const { error: authError } =
+        mode === "register"
+          ? await authClient.signUp.email({
+              name: email.split("@")[0],
+              email,
+              password,
+              fetchOptions,
+            })
+          : await authClient.signIn.email({ email, password, fetchOptions });
 
-        // 上面这次请求已经把 token 消耗掉了（一次性），紧接着的自动登录需要一个新的。
-        const freshToken = await turnstileRef.current?.getFreshToken();
-        if (!freshToken) {
-          setError("人机验证已过期，请重新验证后再试一次。");
-          resetCaptcha();
-          return;
-        }
-        loginToken = freshToken;
-      }
-
-      const result = await signIn("credentials", {
-        username,
-        password,
-        turnstileToken: loginToken,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        if (result.code === "captcha_failed") {
+      if (authError) {
+        if (authError.code === "VERIFICATION_FAILED" || authError.code === "MISSING_RESPONSE") {
           setError("人机验证未通过，请重试。");
+        } else if (mode === "register") {
+          setError(authError.message ?? "注册失败，请稍后重试。");
         } else {
-          setError("用户名或密码不正确。");
+          setError("邮箱或密码不正确。");
         }
         resetCaptcha();
         return;
@@ -111,15 +94,13 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs text-mist">用户名</span>
+          <span className="text-xs text-mist">邮箱</span>
           <input
-            type="text"
+            type="email"
             required
-            minLength={2}
-            maxLength={30}
-            autoComplete="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="rounded-2xl border border-line bg-ink-2 px-4 py-2.5 text-sm text-paper placeholder:text-mist focus:outline-none focus-visible:ring-2 focus-visible:ring-ember"
           />
         </label>
@@ -149,6 +130,14 @@ export default function LoginPage() {
           {pending ? "处理中…" : mode === "login" ? "登录" : "注册并登录"}
         </button>
       </form>
+
+      <div className="mt-6 flex items-center gap-3">
+        <div className="h-px flex-1 bg-line" />
+        <span className="text-xs text-mist">或</span>
+        <div className="h-px flex-1 bg-line" />
+      </div>
+
+      <GoogleSignInButton className="mt-6 flex w-full items-center justify-center gap-2 rounded-full border border-line bg-paper px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-paper-dim" />
     </div>
   );
 }

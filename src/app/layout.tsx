@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Fraunces, Noto_Sans_SC } from "next/font/google";
-import { Providers } from "@/components/Providers";
 import { NavBar } from "@/components/NavBar";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -29,7 +28,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
+  const session = await getSession();
 
   return (
     <html lang="zh" className={`${fraunces.variable} ${notoSansSC.variable} h-full`}>
@@ -49,10 +48,8 @@ export default async function RootLayout({
           {`window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
           plausible.init()`}
         </Script>
-        <Providers>
-          <NavBar isLoggedIn={!!session?.user} userName={session?.user?.name ?? null} />
-          {children}
-        </Providers>
+        <NavBar isLoggedIn={!!session?.user} userName={session?.user?.name ?? null} />
+        {children}
       </body>
     </html>
   );

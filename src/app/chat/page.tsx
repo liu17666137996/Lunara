@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAccessStatus } from "@/lib/billing";
 import { ChatClient } from "@/components/chat/ChatClient";
 import type { AccessStatus, CharacterSummary, MessageDTO } from "@/types/domain";
 
 export default async function ChatPage() {
-  const session = await auth();
+  const session = await getSession();
 
   if (!session?.user?.id) {
     return <ChatClient mode="guest" />;

@@ -1,10 +1,10 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { HomeClient } from "@/components/home/HomeClient";
 import type { CharacterSummary } from "@/types/domain";
 
 export default async function HomePage() {
-  const session = await auth();
+  const session = await getSession();
 
   const characters: CharacterSummary[] = await prisma.character.findMany({
     orderBy: { createdAt: "asc" },

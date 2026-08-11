@@ -11,44 +11,55 @@ datasource db {
 }
 
 // ---------------------------------------------------------------------------
-// Auth.js (NextAuth) required models.
-// Google OAuth 走 Account/Session；本地账号密码走下面 User.username/password。
+// better-auth required models.
+// Google OAuth 和邮箱/密码登录都落在 Account/Session 里；
+// 字段形状由 better-auth 决定，见 src/lib/auth.ts。
 // ---------------------------------------------------------------------------
 
 model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String? // 邮箱/密码登录的哈希，仅 providerId = "credential" 有值
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
-model VerificationToken {
+model Verification {
+  id         String   @id @default(cuid())
   identifier String
-  token      String   @unique
-  expires    DateTime
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  @@unique([identifier, token])
+  @@index([identifier])
 }
 
 // ---------------------------------------------------------------------------
@@ -56,15 +67,14 @@ model VerificationToken {
 // ---------------------------------------------------------------------------
 
 model User {
-  id        String   @id @default(cuid())
-  email     String?  @unique // Google 登录用户回填；本地账号密码用户可为空
-  username  String?  @unique // 本地账号密码登录用；见 auth.ts 的 Credentials provider
-  password  String? // bcrypt 哈希，仅本地账号密码用户有值，绝不存明文
-  name      String?
-  avatarUrl String?
-  googleId  String?  @unique // Google 返回的 sub，账号首次关联时回填，见 auth.ts 的 linkAccount 事件
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  name          String
+  image         String? // better-auth 标准字段，Google 头像等自动回填于此
+  avatarUrl     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Monetization — 会员默认可试用 7 天，登录即会员，见 AI女友SPEC.md 第 8 点
   trialStartedAt DateTime?
@@ -89,7 +99,7 @@ model Character {
   keywords     String[] // 卡片上的 3 个关键词
   avatarUrl    String // 卡片头图
   baseImageUrl String // 图片生成时作为形象参照的基础图
-  systemPrompt String @db.Text // system_prompt_template，聊天时的核心人设
+  systemPrompt String   @db.Text // system_prompt_template，聊天时的核心人设
   voiceId      String // TTS speaker id
   profile      Json // 完整角色 JSON（personality/memory_rules/boundaries 等），用于组装更细的 prompt
   createdAt    DateTime @default(now())

@@ -1,11 +1,11 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAccessStatus } from "@/lib/billing";
 import { BillingClient } from "@/components/billing/BillingClient";
 import type { AccessStatus, CharacterSummary } from "@/types/domain";
 
 export default async function BillingPage() {
-  const session = await auth();
+  const session = await getSession();
 
   if (!session?.user?.id) {
     return <BillingClient access={null} currentCharacter={null} characters={[]} />;
